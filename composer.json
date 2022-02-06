@@ -1,0 +1,34 @@
+{
+    "name": "gri3li/binance-api",
+    "type": "library",
+    "description": "Implementation of Binance trading API based on repository pattern",
+    "keywords": ["binance", "repository", "cryptocurrency", "exchange", "trading", "spot", "margin", "futures", "option"],
+    "license": "MIT",
+    "require": {
+        "php": ">=7.4",
+        "gri3li/trading-api-contracts": "@dev",
+        "guzzlehttp/guzzle": ">=6.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "8.5.20"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gri3li\\BinanceApi\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Gri3li\\BinanceApi\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../trading-api-contracts",
+            "options": {
+                "symlink": true
+            }
+        }
+    ]
+}
