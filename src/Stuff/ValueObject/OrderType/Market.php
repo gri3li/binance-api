@@ -2,14 +2,14 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueObject\OrderType;
 
-use Gri3li\TradingApiContracts\interfaces\OrderTypeInterface;
+use Gri3li\TradingApiContracts\OrderType;
 
-class Market implements OrderTypeInterface
+class Market implements OrderType
 {
 	public function getParams(): array
 	{
 		return [
-			'type' => 'MARKET', // required, ENUM(LIMIT, MARKET, STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT, LIMIT_MAKER)
+			'type' => 'MARKET',
 		];
 	}
 }

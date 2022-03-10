@@ -27,7 +27,7 @@
             "type": "path",
             "url": "../trading-api-contracts",
             "options": {
-                "symlink": true
+                "symlink": false
             }
         }
     ]

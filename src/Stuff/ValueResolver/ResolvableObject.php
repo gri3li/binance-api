@@ -3,7 +3,6 @@
 namespace Gri3li\BinanceApi\Stuff\ValueResolver;
 
 use Gri3li\BinanceApi\Stuff\Exception\InvalidArgumentException;
-use Gri3li\BinanceApi\Stuff\ValueResolver\ValueResolverInterface;
 
 abstract class ResolvableObject
 {

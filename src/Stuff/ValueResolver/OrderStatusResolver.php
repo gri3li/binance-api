@@ -2,18 +2,18 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueResolver;
 
-use Gri3li\TradingApiContracts\interfaces\OrderStatusInterface;
+use Gri3li\TradingApiContracts\OrderStatus;
 
 class OrderStatusResolver implements ValueResolverInterface
 {
 	private static array $allowed = [
-		OrderStatusInterface::NEW,
-		OrderStatusInterface::FILLED,
-		OrderStatusInterface::PARTIALLY_FILLED,
-		OrderStatusInterface::CANCELED,
-		OrderStatusInterface::PENDING_CANCEL,
-		OrderStatusInterface::REJECTED,
-		OrderStatusInterface::EXPIRED,
+		OrderStatus::NEW,
+		OrderStatus::FILLED,
+		OrderStatus::PARTIALLY_FILLED,
+		OrderStatus::CANCELED,
+		OrderStatus::PENDING_CANCEL,
+		OrderStatus::REJECTED,
+		OrderStatus::EXPIRED,
 	];
 
 	public function getParamFromValue(string $value): string

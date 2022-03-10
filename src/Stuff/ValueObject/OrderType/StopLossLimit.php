@@ -2,14 +2,14 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueObject\OrderType;
 
-use Gri3li\TradingApiContracts\interfaces\OrderTypeInterface;
-use Gri3li\TradingApiContracts\interfaces\PriceInterface;
+use Gri3li\TradingApiContracts\OrderType;
+use Gri3li\TradingApiContracts\Price;
 
-class StopLossLimit implements OrderTypeInterface
+class StopLossLimit implements OrderType
 {
-	private PriceInterface $stopPrice;
+	private Price $stopPrice;
 
-	public function __construct(PriceInterface $stopPrice)
+	public function __construct(Price $stopPrice)
 	{
 		$this->stopPrice = $stopPrice;
 	}
@@ -17,8 +17,8 @@ class StopLossLimit implements OrderTypeInterface
 	public function getParams(): array
 	{
 		return [
-			'type' => 'STOP_LOSS', // required, ENUM(LIMIT, MARKET, STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT, LIMIT_MAKER)
-			'stopPrice' => $this->stopPrice, // required, DECIMAL
+			'type' => 'STOP_LOSS',
+			'stopPrice' => $this->stopPrice->getParam(),
 		];
 	}
 }

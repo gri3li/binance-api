@@ -2,26 +2,26 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueObject;
 
-use Gri3li\TradingApiContracts\interfaces\SymbolInterface;
-use Gri3li\TradingApiContracts\interfaces\SymbolPairInterface;
+use Gri3li\TradingApiContracts\Symbol;
+use Gri3li\TradingApiContracts\SymbolPair as SymbolPairInterface;
 
 class SymbolPair implements SymbolPairInterface
 {
-	private SymbolInterface $base;
-	private SymbolInterface $quote;
+	private Symbol $base;
+	private Symbol $quote;
 
-	public function __construct(SymbolInterface $base, SymbolInterface $quote)
+	public function __construct(Symbol $base, Symbol $quote)
 	{
 		$this->base = $base;
 		$this->quote = $quote;
 	}
 
-	public function getBase(): SymbolInterface
+	public function getBase(): Symbol
 	{
 		return $this->base;
 	}
 
-	public function getQuote(): SymbolInterface
+	public function getQuote(): Symbol
 	{
 		return $this->quote;
 	}

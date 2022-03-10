@@ -2,7 +2,7 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueObject;
 
-use Gri3li\TradingApiContracts\interfaces\IdentifierInterface;
+use Gri3li\TradingApiContracts\Identifier as IdentifierInterface;
 
 class Identifier implements IdentifierInterface
 {

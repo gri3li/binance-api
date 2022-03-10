@@ -2,14 +2,14 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueObject\OrderType;
 
-use Gri3li\TradingApiContracts\interfaces\OrderTypeInterface;
-use Gri3li\TradingApiContracts\interfaces\PriceInterface;
+use Gri3li\TradingApiContracts\OrderType;
+use Gri3li\TradingApiContracts\Price;
 
-class LimitMaker implements OrderTypeInterface
+class LimitMaker implements OrderType
 {
-	private PriceInterface $price;
+	private Price $price;
 
-	public function __construct(PriceInterface $price)
+	public function __construct(Price $price)
 	{
 		$this->price = $price;
 	}
@@ -17,8 +17,8 @@ class LimitMaker implements OrderTypeInterface
 	public function getParams(): array
 	{
 		return [
-			'type' => 'LIMIT_MAKER', // required, ENUM(LIMIT, MARKET, STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT, LIMIT_MAKER)
-			'price' => $this->price, // required, DECIMAL
+			'type' => 'LIMIT_MAKER',
+			'price' => $this->price->getParam(),
 		];
 	}
 }

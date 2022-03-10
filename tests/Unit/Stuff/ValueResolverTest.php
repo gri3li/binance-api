@@ -1,6 +1,6 @@
 <?php
 
-namespace Gri3li\Binance\Tests\Unit\Stuff;
+namespace Gri3li\BinanceApi\Tests\Unit\Stuff;
 
 use Gri3li\BinanceApi\Stuff\ValueResolver\OrderStatusResolver;
 use Gri3li\BinanceApi\Stuff\ValueResolver\PriceResolver;
@@ -11,9 +11,9 @@ use Gri3li\BinanceApi\Stuff\ValueResolver\SymbolQuoteResolver;
 use Gri3li\BinanceApi\Stuff\ValueResolver\TimeInForceResolver;
 use Gri3li\BinanceApi\Stuff\ValueResolver\UnresolvedValueException;
 use Gri3li\BinanceApi\Stuff\ValueResolver\VolumeResolver;
-use Gri3li\TradingApiContracts\interfaces\OrderStatusInterface;
-use Gri3li\TradingApiContracts\interfaces\SideInterface;
-use Gri3li\TradingApiContracts\interfaces\TimeInForceInterface;
+use Gri3li\TradingApiContracts\Side;
+use Gri3li\TradingApiContracts\OrderStatus;
+use Gri3li\TradingApiContracts\TimeInForce;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -26,18 +26,12 @@ class ValueResolverTest extends TestCase
 	public function testOrderStatusResolver(): void
 	{
 		$resolver = new OrderStatusResolver();
-		$value = OrderStatusInterface::NEW;
+		$value = OrderStatus::NEW;
 		$param = 'NEW';
 		$this->assertEquals($param, $resolver->getParamFromValue($value));
 		$this->assertEquals($value, $resolver->getValueFromParam($param));
-		try {
-			$thrown = false;
-			$resolver->getParamFromValue('AZAZAOLOLO');
-		} catch (UnresolvedValueException $e) {
-			$thrown = true;
-		} finally {
-			$this->assertTrue($thrown, 'Non-existent status value should throw UnresolvedValueException');
-		}
+		$this->expectException(UnresolvedValueException::class);
+		$resolver->getParamFromValue('AZAZAOLOLO');
 	}
 
 	public function testPriceResolver(): void
@@ -62,8 +56,8 @@ class ValueResolverTest extends TestCase
 	{
 		$resolver = new SideResolver();
 		$map = [
-			SideInterface::LONG => 'BUY',
-			SideInterface::SHORT => 'SELL',
+			Side::LONG => 'BUY',
+			Side::SHORT => 'SELL',
 		];
 		foreach ($map as $value => $param) {
 			$this->assertEquals($param, $resolver->getParamFromValue($value));
@@ -98,8 +92,8 @@ class ValueResolverTest extends TestCase
 	public function testTimeInForceResolver(): void
 	{
 		$resolver = new TimeInForceResolver();
-		$value = TimeInForceInterface::GOOD_TILL_DATE;
-		$param = TimeInForceInterface::GOOD_TILL_DATE;
+		$value = TimeInForce::GOOD_TILL_DATE;
+		$param = TimeInForce::GOOD_TILL_DATE;
 		$this->assertEquals($param, $resolver->getParamFromValue($value));
 		$this->assertEquals($value, $resolver->getValueFromParam($param));
 	}

@@ -2,17 +2,17 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueObject\OrderType;
 
-use Gri3li\TradingApiContracts\interfaces\OrderTypeInterface;
-use Gri3li\TradingApiContracts\interfaces\PriceInterface;
-use Gri3li\TradingApiContracts\interfaces\TimeInForceInterface;
+use Gri3li\TradingApiContracts\OrderType;
+use Gri3li\TradingApiContracts\Price;
+use Gri3li\TradingApiContracts\TimeInForce;
 
-class TakeProfitLimit implements OrderTypeInterface
+class TakeProfitLimit implements OrderType
 {
-	private PriceInterface $price;
-	private PriceInterface $stopPrice;
-	private TimeInForceInterface $timeInForce;
+	private Price $price;
+	private Price $stopPrice;
+	private TimeInForce $timeInForce;
 
-	public function __construct(PriceInterface $price, PriceInterface $stopPrice, TimeInForceInterface $timeInForce)
+	public function __construct(Price $price, Price $stopPrice, TimeInForce $timeInForce)
 	{
 		$this->price = $price;
 		$this->stopPrice = $stopPrice;
@@ -22,10 +22,10 @@ class TakeProfitLimit implements OrderTypeInterface
 	public function getParams(): array
 	{
 		return [
-			'type' => 'TAKE_PROFIT_LIMIT', // required, ENUM(LIMIT, MARKET, STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT, LIMIT_MAKER)
-			'timeInForce' => (string) $this->timeInForce, // optional, ENUM(GTC, IOC, FOK)
-			'price' => $this->price, // required, DECIMAL
-			'stopPrice' => $this->stopPrice, // required, DECIMAL
+			'type' => 'TAKE_PROFIT_LIMIT',
+			'timeInForce' => $this->timeInForce->getParam(),
+			'price' => $this->price->getParam(),
+			'stopPrice' => $this->stopPrice->getParam(),
 		];
 	}
 }

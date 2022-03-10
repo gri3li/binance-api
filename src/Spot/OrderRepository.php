@@ -3,35 +3,24 @@
 namespace Gri3li\BinanceApi\Spot;
 
 use Gri3li\BinanceApi\Stuff\Repository\DefaultRepository;
-use Gri3li\BinanceApi\Stuff\ValueObject\Identifier;
-use Gri3li\BinanceApi\Stuff\ValueObject\Order;
-use Gri3li\BinanceApi\Stuff\ValueObject\OrderStatus;
-use Gri3li\BinanceApi\Stuff\ValueObject\Side;
-use Gri3li\BinanceApi\Stuff\ValueObject\Symbol;
-use Gri3li\BinanceApi\Stuff\ValueObject\SymbolPair;
-use Gri3li\BinanceApi\Stuff\ValueObject\Volume;
-use Gri3li\BinanceApi\Stuff\ValueResolver\OrderStatusResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\SideResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\SymbolBaseResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\SymbolQuoteResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\VolumeResolver;
-use Gri3li\TradingApiContracts\interfaces\FindCriteriaInterface;
-use Gri3li\TradingApiContracts\interfaces\IdentifierInterface;
-use Gri3li\TradingApiContracts\interfaces\OrderInterface;
-use Gri3li\TradingApiContracts\interfaces\OrderRepositoryInterface;
-use Gri3li\TradingApiContracts\interfaces\OrderTypeInterface;
+use Gri3li\BinanceApi\Stuff\ValueObject;
+use Gri3li\TradingApiContracts\OrderFindCriteria;
+use Gri3li\TradingApiContracts\Identifier;
+use Gri3li\TradingApiContracts\Order;
+use Gri3li\TradingApiContracts\OrderRepository as OrderRepositoryInterface;
+use Gri3li\TradingApiContracts\OrderType;
+use Gri3li\TradingApiContracts\SymbolPair;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Utils;
+use Psr\Http\Client\ClientExceptionInterface;
 
 class OrderRepository extends DefaultRepository implements OrderRepositoryInterface
 {
 	/**
-	 * Add in a new order
-	 * @param OrderInterface $order
-	 * @param OrderTypeInterface $type
-	 * @throws \Psr\Http\Client\ClientExceptionInterface
+	 * Add new order
+	 * @throws ClientExceptionInterface
 	 */
-	public function add(OrderInterface $order, OrderTypeInterface $type): void
+	public function add(Order $order, OrderType $type): void
 	{
 		$params = array_merge($this->defaultParams(), $type->getParams(), [
 			'symbol' => $order->getSymbolPair()->getParam(),
@@ -39,27 +28,27 @@ class OrderRepository extends DefaultRepository implements OrderRepositoryInterf
 			'quantity' => $order->getVolume()->getParam(),
 		]);
 		if ($order->getIdentifier()->getClientId()) {
-			$params['clientOrderId'] = $order->getIdentifier()->getClientId();
+			$params['newClientOrderId'] = $order->getIdentifier()->getClientId();
 		}
-		$request = new Request('POST', '/api/v3/order', [], http_build_query($params));
+		$headers = ['Content-Type' => 'application/x-www-form-urlencoded'];
+		$request = new Request('POST', '/api/v3/order', $headers, http_build_query($params));
 		$this->signAndSend($request);
 	}
 
 	/**
 	 * Get order by clientId or id, throw exception if not found
-	 * @param IdentifierInterface $identifier
-	 * @return OrderInterface
-	 * @throws \Psr\Http\Client\ClientExceptionInterface
+	 * @throws ClientExceptionInterface
 	 */
-	public function getByIdentifier(IdentifierInterface $identifier): OrderInterface
+	public function getByIdentifier(Identifier $identifier, SymbolPair $symbolPair): Order
 	{
 		$params = $this->defaultParams();
 		if ($identifier->getClientId()) {
-			$params['clientOrderId'] = $identifier->getClientId();
+			$params['origClientOrderId'] = $identifier->getClientId();
 		}
 		if ($identifier->getId()) {
 			$params['orderId'] = $identifier->getId();
 		}
+		$params['symbol'] = $symbolPair->getParam();
 		$request = new Request('GET', '/api/v3/order?' . http_build_query($params));
 		$response = $this->signAndSend($request);
 		$item = Utils::jsonDecode($response->getBody()->getContents(), true);
@@ -67,90 +56,57 @@ class OrderRepository extends DefaultRepository implements OrderRepositoryInterf
 			throw new \RuntimeException('not found'); //TODO improve exception structure
 		}
 
-		return new Order(
-			new Side(new SideResolver(), null, $item['side']),
-			new SymbolPair(
-				new Symbol(new SymbolBaseResolver($this->client), null, $item['symbol']),
-				new Symbol(new SymbolQuoteResolver($this->client), null, $item['symbol'])
-			),
-			new Volume(new VolumeResolver(), null, $item['origQty']),
-			new OrderStatus(new OrderStatusResolver(), null, $item['status']),
-			new Identifier($item['clientOrderId'], $item['orderId'])
-		);
+		return $this->makeOrderValueObject($item);
 	}
 
 	/**
-	 * Cancel an active order by clientId or id
-	 * @param IdentifierInterface $identifier
-	 * @throws \Psr\Http\Client\ClientExceptionInterface
+	 * Cancel order
+	 * @throws ClientExceptionInterface
 	 */
-	public function cancelByIdentifier(IdentifierInterface $identifier): void
+	public function cancel(Order $order): void
 	{
 		$params = $this->defaultParams();
-		if ($identifier->getClientId()) {
-			$params['clientOrderId'] = $identifier->getClientId();
+		if ($order->getIdentifier()->getClientId()) {
+			$params['origClientOrderId'] =  $order->getIdentifier()->getClientId();
 		}
-		if ($identifier->getId()) {
-			$params['orderId'] = $identifier->getId();
+		if ($order->getIdentifier()->getId()) {
+			$params['orderId'] = $order->getIdentifier()->getId();
 		}
-		$request =  new Request('POST', '/api/v3/order', [], http_build_query($params));
+		$params['symbol'] = $order->getSymbolPair()->getParam();
+		$headers = ['Content-Type' => 'application/x-www-form-urlencoded'];
+		$request =  new Request('DELETE', '/api/v3/order', $headers, http_build_query($params));
 		$this->signAndSend($request);
 	}
 
 	/**
 	 * Find orders by criteria
-	 * @param FindCriteriaInterface $criteria
-	 * @return array
-	 * @throws \Psr\Http\Client\ClientExceptionInterface
+	 * @throws ClientExceptionInterface
 	 */
-	public function findAll(FindCriteriaInterface $criteria): array
+	public function findAll(OrderFindCriteria $criteria): array
 	{
 		$params = array_merge($this->defaultParams(), $criteria->makeParams());
-		$request = new Request('GET', '/api/v3/order?' . http_build_query($params));
+		$request = new Request('GET', '/api/v3/allOrders?' . http_build_query($params));
 		$response = $this->signAndSend($request);
 		$items = Utils::jsonDecode($response->getBody()->getContents(), true);
 		$result = [];
 		foreach ($items as $item) {
-			$result[] = new Order(
-				new Side(new SideResolver(), null, $item['side']),
-				new SymbolPair(
-					new Symbol(new SymbolBaseResolver($this->client), null, $item['symbol']),
-					new Symbol(new SymbolQuoteResolver($this->client), null, $item['symbol'])
-				),
-				new Volume(new VolumeResolver(), null, $item['origQty']),
-				new OrderStatus(new OrderStatusResolver(), null, $item['status']),
-				new Identifier($item['clientOrderId'], $item['orderId'])
-			);
+			$result[] = $this->makeOrderValueObject($item);
 		}
 
 		return $result;
 	}
 
-	/**
-	 * Find order by criteria, return null if not found
-	 * @param FindCriteriaInterface $criteria
-	 * @return OrderInterface|null
-	 * @throws \Psr\Http\Client\ClientExceptionInterface
-	 */
-	public function findOne(FindCriteriaInterface $criteria): ?OrderInterface
+	private function makeOrderValueObject(array $data): ValueObject\Order
 	{
-		$params = array_merge($this->defaultParams(), $criteria->makeParams());
-		$request = new Request('GET', '/api/v3/order?' . http_build_query($params));
-		$response = $this->signAndSend($request);
-		$item = Utils::jsonDecode($response->getBody()->getContents(), true);
-		if (!$item) {
-			return null;
-		}
-
-		return new Order(
-			new Side(new SideResolver(), null, $item['side']),
-			new SymbolPair(
-				new Symbol(new SymbolBaseResolver($this->client), null, $item['symbol']),
-				new Symbol(new SymbolQuoteResolver($this->client), null, $item['symbol'])
+		return new ValueObject\Order(
+			new ValueObject\Side($this->sideResolver, null, $data['side']),
+			new ValueObject\SymbolPair(
+				new ValueObject\Symbol($this->symbolBaseResolver, null, $data['symbol']),
+				new ValueObject\Symbol($this->symbolQuoteResolver, null, $data['symbol'])
 			),
-			new Volume(new VolumeResolver(), null, $item['origQty']),
-			new OrderStatus(new OrderStatusResolver(), null, $item['status']),
-			new Identifier($item['clientOrderId'], $item['orderId'])
+			new ValueObject\Volume($this->volumeResolver, null, $data['origQty']),
+			new ValueObject\OrderStatus($this->orderStatusResolver, null, $data['status']),
+			new ValueObject\Identifier($data['clientOrderId'], $data['orderId'])
 		);
 	}
 }

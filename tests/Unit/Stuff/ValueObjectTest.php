@@ -1,6 +1,6 @@
 <?php
 
-namespace Gri3li\Binance\Tests\Unit\Stuff;
+namespace Gri3li\BinanceApi\Tests\Unit\Stuff;
 
 use Gri3li\BinanceApi\Stuff\ValueObject\OrderType\Limit;
 use Gri3li\BinanceApi\Stuff\ValueObject\OrderType\LimitMaker;
@@ -13,7 +13,6 @@ use Gri3li\BinanceApi\Stuff\ValueObject\OrderStatus;
 use Gri3li\BinanceApi\Stuff\ValueObject\Price;
 use Gri3li\BinanceApi\Stuff\ValueObject\RecvWindow;
 use Gri3li\BinanceApi\Stuff\ValueObject\Side;
-use Gri3li\BinanceApi\Stuff\ValueObject\Suit;
 use Gri3li\BinanceApi\Stuff\ValueObject\SymbolPair;
 use Gri3li\BinanceApi\Stuff\ValueObject\Symbol;
 use Gri3li\BinanceApi\Stuff\ValueObject\Identifier;
@@ -28,9 +27,9 @@ use Gri3li\BinanceApi\Stuff\ValueResolver\SymbolQuoteResolver;
 use Gri3li\BinanceApi\Stuff\ValueResolver\TimeInForceResolver;
 use Gri3li\BinanceApi\Stuff\ValueResolver\UnresolvedValueException;
 use Gri3li\BinanceApi\Stuff\ValueResolver\VolumeResolver;
-use Gri3li\TradingApiContracts\interfaces\OrderStatusInterface;
-use Gri3li\TradingApiContracts\interfaces\SideInterface;
-use Gri3li\TradingApiContracts\interfaces\TimeInForceInterface;
+use Gri3li\TradingApiContracts\OrderStatus as OrderStatusInterface;
+use Gri3li\TradingApiContracts\Side as SideInterface;
+use Gri3li\TradingApiContracts\TimeInForce as TimeInForceInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -42,11 +41,6 @@ class ValueObjectTest extends TestCase
 {
 	public function testIdentifier(): void
 	{
-		var_dump(Suit::Clubs->name);
-		exit;
-
-
-
 		$identifier = new Identifier('client-id-123');
 		$this->assertEquals('client-id-123', $identifier->getClientId());
 		$identifier = new Identifier(null, 'id-123');
@@ -55,14 +49,10 @@ class ValueObjectTest extends TestCase
 
 	public function testOrderStatus(): void
 	{
-		$status = new OrderStatus(new OrderStatusResolver(), OrderStatus::NEW);
-		$this->assertEquals(OrderStatus::NEW, $status);
-		try {
-			new OrderStatus(new OrderStatusResolver(), 'invalid-value');
-			$this->fail('An unexpected exception was thrown');
-		} catch (\Throwable $e) {
-			$this->assertEquals(UnresolvedValueException::class, get_class($e));
-		}
+		$status = new OrderStatus(new OrderStatusResolver(), OrderStatusInterface::NEW);
+		$this->assertEquals(OrderStatusInterface::NEW, $status);
+		$this->expectException(UnresolvedValueException::class);
+		new OrderStatus(new OrderStatusResolver(), 'invalid-value');
 	}
 
 	public function testPrice(): void

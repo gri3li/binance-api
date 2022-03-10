@@ -2,13 +2,13 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueResolver;
 
-use Gri3li\TradingApiContracts\interfaces\SideInterface;
+use Gri3li\TradingApiContracts\Side;
 
 class SideResolver implements ValueResolverInterface
 {
 	private static array $map = [
-		SideInterface::LONG => 'BUY',
-		SideInterface::SHORT => 'SELL',
+		Side::LONG => 'BUY',
+		Side::SHORT => 'SELL',
 	];
 
 	public function getParamFromValue(string $value): string

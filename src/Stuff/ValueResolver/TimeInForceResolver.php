@@ -2,15 +2,15 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueResolver;
 
-use Gri3li\TradingApiContracts\interfaces\TimeInForceInterface;
+use Gri3li\TradingApiContracts\TimeInForce;
 
 class TimeInForceResolver implements ValueResolverInterface
 {
 	private static array $allowed = [
-		TimeInForceInterface::GOOD_TILL_CANCELED,
-		TimeInForceInterface::IMMEDIATE_OR_CANCEL,
-		TimeInForceInterface::FILL_OR_KILL,
-		TimeInForceInterface::GOOD_TILL_DATE,
+		TimeInForce::GOOD_TILL_CANCELED,
+		TimeInForce::IMMEDIATE_OR_CANCEL,
+		TimeInForce::FILL_OR_KILL,
+		TimeInForce::GOOD_TILL_DATE,
 	];
 
 	public function getParamFromValue(string $value): string

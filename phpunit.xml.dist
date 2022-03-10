@@ -7,7 +7,7 @@
     <php>
         <const name="API_SECRET" value=""/>
         <const name="API_KEY" value=""/>
-        <const name="API_HOST" value=""/>
+        <const name="API_HOST" value="https://api.binance.com"/>
 
         <ini name="display_errors" value="1" />
         <ini name="error_reporting" value="-1" />

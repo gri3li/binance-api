@@ -1,149 +1,109 @@
 <?php
 
-namespace Gri3li\Binance\Tests\Integration\Spot;
+namespace Gri3li\BinanceApi\Tests\Integration\Spot;
 
 use Gri3li\BinanceApi\Spot\OrderFindCriteria;
 use Gri3li\BinanceApi\Spot\OrderRepository;
-use Gri3li\BinanceApi\Stuff\ValueObject\Auth;
 use Gri3li\BinanceApi\Stuff\ValueObject\Identifier;
-use Gri3li\BinanceApi\Stuff\ValueObject\Order;
-use Gri3li\BinanceApi\Stuff\ValueObject\OrderStatus;
-use Gri3li\BinanceApi\Stuff\ValueObject\OrderType\Limit;
-use Gri3li\BinanceApi\Stuff\ValueObject\Price;
-use Gri3li\BinanceApi\Stuff\ValueObject\RecvWindow;
-use Gri3li\BinanceApi\Stuff\ValueObject\Side;
-use Gri3li\BinanceApi\Stuff\ValueObject\Symbol;
 use Gri3li\BinanceApi\Stuff\ValueObject\SymbolPair;
-use Gri3li\BinanceApi\Stuff\ValueObject\TimeInForce;
-use Gri3li\BinanceApi\Stuff\ValueObject\Volume;
-use Gri3li\BinanceApi\Stuff\ValueResolver\OrderStatusResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\PriceResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\RecvWindowResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\ResolvableObject;
-use Gri3li\BinanceApi\Stuff\ValueResolver\SideResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\SymbolBaseResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\SymbolQuoteResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\TimeInForceResolver;
-use Gri3li\BinanceApi\Stuff\ValueResolver\VolumeResolver;
-use Gri3li\TradingApiContracts\interfaces\OrderStatusInterface;
-use Gri3li\TradingApiContracts\interfaces\SideInterface;
-use Gri3li\TradingApiContracts\interfaces\TimeInForceInterface;
-use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Utils as GuzzleUtils;
-use GuzzleHttp\Psr7\Utils as Psr7Utils;
+use Gri3li\BinanceApi\Tests\Integration\Helper\BinanceHelper;
+use Gri3li\BinanceApi\Tests\Integration\Helper\OrderHelper;
+use Gri3li\BinanceApi\Tests\Integration\Helper\RepositoryHelper;
+use Gri3li\TradingApiContracts\Order;
+use Gri3li\TradingApiContracts\OrderStatus;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 /**
- * tip: constants (API_KEY, API_SECRET, API_HOST) set in phpunit.xml
+ * @url https://binance-docs.github.io/apidocs/spot/en/#spot-account-trade
  */
 class OrderRepositoryTest extends TestCase
 {
-	private Auth $auth;
-	private Client $client;
-	private RecvWindow $recvWindow;
 	private OrderRepository $repository;
+	private SymbolPair $symbolPair;
 
 	public function __construct($name = null, array $data = [], $dataName = '')
 	{
-		$this->auth = new Auth(API_KEY, API_SECRET);
-		$this->client = new Client(['base_uri' => API_HOST]);
-		$this->recvWindow = new RecvWindow(new RecvWindowResolver(), 5000);
-		$this->repository = new OrderRepository(
-			$this->auth,
-			$this->client,
-			$this->recvWindow
-		);
+		throw new \RuntimeException('Attention! Testing on a real trading account. Remove this line to continue working');
+		$openOrders = BinanceHelper::get('/api/v3/openOrders', ['symbol' => 'BTCUSDT']);
+		if ($openOrders) {
+			throw new \RuntimeException('Close all BTCUSDT orders before run test');
+		}
+		$this->repository = RepositoryHelper::getOrderRepository();
+		$this->symbolPair = OrderHelper::getSymbolPair('BTCUSDT');
 		parent::__construct($name, $data, $dataName);
 	}
 
-	public function testAdd(): void
+
+	public static function tearDownAfterClass(): void
 	{
-		$newOrder = new Order(
-			new Side(new SideResolver(), SideInterface::SHORT),
-			new SymbolPair(
-				new Symbol(new SymbolBaseResolver($this->client), null,'BTCUSDT'),
-				new Symbol(new SymbolQuoteResolver($this->client), null,'BTCUSDT')
-			),
-			new Volume(new VolumeResolver(), '0.0001'),
-			new OrderStatus(new OrderStatusResolver(), OrderStatusInterface::NEW),
-			new Identifier('id123')
-		);
-		$type = new Limit(
-			new Price(new PriceResolver(), '123000'),
-			new TimeInForce(new TimeInForceResolver(), TimeInForceInterface::GOOD_TILL_DATE)
-		);
-		//$this->repository->add($newOrder, $type);
-
-		$params = http_build_query([
-			'symbol' => 'BTCUSDT',
-			'side' => 'BUY',
-			'quantity' => '0.0001',
-			'clientOrderId' => 'id123',
-		]);
-		$response = $this->signAndSend(new Request('GET', '/api/v3/order?' . $params));
-		$item = GuzzleUtils::jsonDecode($response->getBody()->getContents(), true);
-
-		$this->assertNotEmpty($item);
-		$this->assertEquals($item['side'], $newOrder->getSide()->getParam());
-		$this->assertEquals($item['symbol'], $newOrder->getSymbolPair()->getParam());
-		$this->assertEquals($item['origQty'], $newOrder->getVolume()->getParam());
-		$this->assertEquals($item['status'], $newOrder->getStatus()->getParam());
-		$this->assertEquals($item['clientOrderId'], $newOrder->getIdentifier()->getClientId());
-	}
-
-	public function testGetByIdentifier(): void
-	{
-		$identifier = new Identifier('id123');
-		//$order = $this->repository->getByIdentifier($identifier);
-		$this->assertEquals($identifier->getClientId(), $order->getIdentifier()->getClientId());
-	}
-
-	public function testFindAll(): void
-	{
-		$symbolPair = new SymbolPair(
-			new Symbol(new SymbolBaseResolver($this->client), null,'BTCUSDT'),
-			new Symbol(new SymbolQuoteResolver($this->client), null,'BTCUSDT')
-		);
-		$criteria = new OrderFindCriteria($symbolPair);
-		$orders = $this->repository->findAll($criteria);
-
-		$this->assertTrue(true);
-	}
-
-	public function testFindOne(): void
-	{
-		$symbolPair = new SymbolPair(
-			new Symbol(new SymbolBaseResolver($this->client), null,'BTCUSDT'),
-			new Symbol(new SymbolQuoteResolver($this->client), null,'BTCUSDT')
-		);
-		$criteria = new OrderFindCriteria($symbolPair);
-		$order = $this->repository->findOne($criteria);
-
-		$this->assertTrue(true);
-	}
-
-	public function testCancel(): void
-	{
-		$this->assertTrue(true);
-	}
-
-	protected function signAndSend(RequestInterface $request): ResponseInterface
-	{
-		$changes = [
-			'set_headers' => ['X-MBX-APIKEY' => $this->auth->getApiKey()],
-		];
-		if ($request->getBody()->getContents()) {
-			$changes['body'] = $request->getBody()->getContents() . '&signature='
-				. hash_hmac('sha256', $request->getBody()->getContents(), $this->auth->getSecret());
-		} else {
-			$changes['query'] = $request->getUri()->getQuery() . '&signature='
-				. hash_hmac('sha256', $request->getUri()->getQuery(), $this->auth->getSecret());
+		$openOrders = BinanceHelper::get('/api/v3/openOrders', ['symbol' => 'BTCUSDT']);
+		if ($openOrders) {
+			BinanceHelper::delete('/api/v3/openOrders', ['symbol' => 'BTCUSDT']);
 		}
-		$signedRequest = Psr7Utils::modifyRequest($request, $changes);
+	}
 
-		return $this->client->send($signedRequest);
+	/**
+	 * @covers OrderRepository::add
+	 */
+	public function testAdd(): string
+	{
+		$clientId = uniqid('order_', false);
+		$newOrder = OrderHelper::getOrder('BUY', 'BTCUSDT', '0.0003', $clientId);
+		$type = OrderHelper::getOrderTypeLimit('40000');
+		$this->repository->add($newOrder, $type);
+
+		$data = BinanceHelper::get('/api/v3/order', [
+			'symbol' => 'BTCUSDT',
+			'origClientOrderId' => $clientId,
+		]);
+
+		$this->assertEquals($newOrder->getSide()->getParam(), $data['side']);
+		$this->assertEquals($newOrder->getSymbolPair()->getParam(), $data['symbol']);
+		$this->assertEquals($newOrder->getStatus()->getParam(), $data['status']);
+		$this->assertEquals($newOrder->getIdentifier()->getClientId(), $data['clientOrderId']);
+
+		return $clientId;
+	}
+
+	/**
+	 * @depends testAdd
+	 * @covers OrderRepository::getByIdentifier
+	 * @covers OrderRepository::findAll
+	 */
+	public function testFetching(string $clientId): Order
+	{
+		$criteria = new OrderFindCriteria($this->symbolPair);
+		$orders = $this->repository->findAll($criteria);
+		$newOrders = array_filter($orders, fn (Order $order) => $order->getStatus()->getValue() === OrderStatus::NEW);
+		$this->assertCount(1, $newOrders);
+
+		$criteria->setStartTime(new \DateTime('-2 day'));
+		$criteria->setEndTime(new \DateTime('-1 day'));
+		$orders = $this->repository->findAll($criteria);
+		$newOrders = array_filter($orders, fn (Order $order) => $order->getStatus()->getValue() === OrderStatus::NEW);
+		$this->assertCount(0, $newOrders);
+
+		$criteria->setStartTime(new \DateTime('-1 hour'));
+		$criteria->setEndTime(new \DateTime('+1 hour'));
+		$orders = $this->repository->findAll($criteria);
+		$newOrders = array_filter($orders, fn (Order $order) => $order->getStatus()->getValue() === OrderStatus::NEW);
+		$this->assertCount(1, $newOrders);
+
+		$identifier = new Identifier($clientId);
+		$order = $this->repository->getByIdentifier($identifier, $this->symbolPair);
+		$this->assertEquals($clientId, $order->getIdentifier()->getClientId());
+
+		return $order;
+	}
+
+	/**
+	 * @depends testFetching
+	 * @covers OrderRepository::cancel
+	 */
+	public function testCancel(Order $order): void
+	{
+		$this->repository->cancel($order);
+		$openOrders = BinanceHelper::get('/api/v3/openOrders', ['symbol' => 'BTCUSDT']);
+		$this->assertEmpty($openOrders);
 	}
 }

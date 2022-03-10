@@ -2,16 +2,16 @@
 
 namespace Gri3li\BinanceApi\Stuff\ValueObject\OrderType;
 
-use Gri3li\TradingApiContracts\interfaces\OrderTypeInterface;
-use Gri3li\TradingApiContracts\interfaces\PriceInterface;
-use Gri3li\TradingApiContracts\interfaces\TimeInForceInterface;
+use Gri3li\TradingApiContracts\OrderType;
+use Gri3li\TradingApiContracts\Price;
+use Gri3li\TradingApiContracts\TimeInForce;
 
-class Limit implements OrderTypeInterface
+class Limit implements OrderType
 {
-	private PriceInterface $price;
-	private TimeInForceInterface $timeInForce;
+	private Price $price;
+	private TimeInForce $timeInForce;
 
-	public function __construct(PriceInterface $price, TimeInForceInterface $timeInForce)
+	public function __construct(Price $price, TimeInForce $timeInForce)
 	{
 		$this->price = $price;
 		$this->timeInForce = $timeInForce;
@@ -20,9 +20,9 @@ class Limit implements OrderTypeInterface
 	public function getParams(): array
 	{
 		return [
-			'type' => 'LIMIT', // required, ENUM(LIMIT, MARKET, STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT, LIMIT_MAKER)
-			'timeInForce' => (string) $this->timeInForce, // optional, ENUM(GTC, IOC, FOK)
-			'price' => $this->price, // required, DECIMAL
+			'type' => 'LIMIT',
+			'timeInForce' => $this->timeInForce->getParam(),
+			'price' => $this->price->getParam(),
 		];
 	}
 }

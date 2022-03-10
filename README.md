@@ -1,11 +1,18 @@
 Binance API 
----------------
-version 2022-1-4
+===========
 
 https://binance-docs.github.io/apidocs
 
-Functionality implementation by means of the pattern "Repository", provide:
+Базируется на паттрерне репозиторий
+Мапится валуе обжекты
+Эта реализация жертвует богатством апи бинанса в пользу унификации работы
 
+Привер поиска
+```php
+fewr($dfsf);
+```
+
+Привер Удаления
 
 <details> 
   <summary><b>Spot</b> (<i>click to expand</i>)</summary>

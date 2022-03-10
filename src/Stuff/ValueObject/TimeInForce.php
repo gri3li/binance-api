@@ -3,7 +3,7 @@
 namespace Gri3li\BinanceApi\Stuff\ValueObject;
 
 use Gri3li\BinanceApi\Stuff\ValueResolver\ResolvableObject;
-use Gri3li\TradingApiContracts\interfaces\TimeInForceInterface;
+use Gri3li\TradingApiContracts\TimeInForce as TimeInForceInterface;
 
 class TimeInForce extends ResolvableObject implements TimeInForceInterface
 {

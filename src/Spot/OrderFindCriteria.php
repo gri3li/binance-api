@@ -3,30 +3,19 @@
 namespace Gri3li\BinanceApi\Spot;
 
 use DateTimeInterface;
-use Gri3li\BinanceApi\Stuff\Identifier;
-use Gri3li\TradingApiContracts\interfaces\FindCriteriaInterface;
-use Gri3li\TradingApiContracts\interfaces\IdentifierInterface;
-use Gri3li\TradingApiContracts\interfaces\SymbolPairInterface;
+use Gri3li\TradingApiContracts\SymbolPair;
+use Gri3li\TradingApiContracts\OrderFindCriteria as OrderFindCriteriaInterface;
 
-// критерии нужно мапить так же как валуеобжекты
-class OrderFindCriteria implements FindCriteriaInterface
+class OrderFindCriteria implements OrderFindCriteriaInterface
 {
-	private SymbolPairInterface $symbolPair;
-	private ?IdentifierInterface $identifier = null;
+	private SymbolPair $symbolPair;
 	private ?DateTimeInterface $startTime = null;
 	private ?DateTimeInterface $endTime = null;
 	private int $limit = 500;
 
-	public function __construct(SymbolPairInterface $symbolPair)
+	public function __construct(SymbolPair $symbolPair)
 	{
 		$this->symbolPair = $symbolPair;
-	}
-
-	public function setIdentifier(IdentifierInterface $identifier): self
-	{
-		$this->identifier = $identifier;
-
-		return $this;
 	}
 
 	public function setStartTime(DateTimeInterface $startTime): self
@@ -45,9 +34,6 @@ class OrderFindCriteria implements FindCriteriaInterface
 
 	public function setLimit(int $limit): self
 	{
-		if ($limit >= 1000) {
-			throw new \Exception(); //TODO improve exception structure
-		}
 		$this->limit = $limit;
 
 		return $this;
@@ -57,18 +43,13 @@ class OrderFindCriteria implements FindCriteriaInterface
 	{
 		$params = [
 			'symbol' => $this->symbolPair->getParam(),
+			'limit' => $this->limit,
 		];
-		if ($this->identifier && $this->identifier->getId()) {
-			$params['orderId'] = $this->identifier->getId();
-		}
 		if ($this->startTime) {
-			$params['startTime'] = $this->startTime; // optional, LONG
+			$params['startTime'] = $this->startTime->format('Uv'); // milliseconds
 		}
 		if ($this->endTime) {
-			$params['endTime'] = $this->endTime; // optional, LONG
-		}
-		if ($this->limit) {
-			$params['limit'] = $this->limit; // optional, LONG
+			$params['endTime'] = $this->endTime->format('Uv'); // milliseconds
 		}
 
 		return $params;
